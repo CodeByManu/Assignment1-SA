@@ -8,6 +8,18 @@ def author_list(request):
     page_obj = Paginator(authors, 25).get_page(request.GET.get("page"))
     return render(request, "app/authors/list.html", {"page_obj": page_obj})
 
+def author_detail(request, pk):
+    author = get_object_or_404(Author, pk=pk)
+    books = author.books.all().order_by("publication_date")
+    return render(
+        request,
+        "app/authors/detail.html",
+        {
+            "author": author,
+            "books": books,
+        },
+    )
+
 def author_create(request):
     if request.method == "POST":
         form = AuthorForm(request.POST)

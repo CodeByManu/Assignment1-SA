@@ -7,6 +7,7 @@ urlpatterns = [
 
     # Authors
     path("authors/", v_authors.author_list, name="author_list"),
+    path("authors/<int:pk>/", v_authors.author_detail, name="author_detail"),
     path("authors/new/", v_authors.author_create, name="author_create"),
     path("authors/<int:pk>/edit/", v_authors.author_update, name="author_update"),
     path("authors/<int:pk>/delete/", v_authors.author_delete, name="author_delete"),
