@@ -2,6 +2,31 @@
 {% extends "app/base.html" %}
 {% block title %}Home{% endblock %}
 {% block content %}
-    <h1>BookLook</h1>
-    <p>Bienvenido. Usa el menú para navegar.</p>
+    <h1 class="mb-3">BookLook</h1>
+
+    <div class="row g-3 mt-2">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Reports</div>
+                <div class="list-group list-group-flush">
+                    <a class="list-group-item list-group-item-action" href="{% url 'authors_table' %}">
+                        Authors table
+                        <small class="text-muted d-block">Books count, average review score, total sales with filters and sorting.</small>
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="{% url 'top_rated_books' %}">
+                        Top rated books
+                        <small class="text-muted d-block">Top 10 by rating with highest/lowest popular reviews.</small>
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="{% url 'top_selling_books' %}">
+                        Top selling books
+                        <small class="text-muted d-block">Top 50 by sales with author totals and year top-5 flag.</small>
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="{% url 'search' %}">
+                        Search
+                        <small class="text-muted d-block">Find books by words in their description.</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
