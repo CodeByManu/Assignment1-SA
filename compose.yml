@@ -1,8 +1,6 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  django-app:
+    image: trodriguezam/assignment2
     ports:
       - "8000:8000"
     volumes:
