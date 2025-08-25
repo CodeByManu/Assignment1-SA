@@ -28,3 +28,5 @@ Thumbs.db
 
 # Migrations cache (mantén las migraciones, solo ignora cachés)
 **/__pycache__/
+
+ADR.md

@@ -1,6 +1,6 @@
 services:
   django-app:
-    image: trodriguezam/assignment2
+    image: trodriguezam/assignment2:latest
     ports:
       - "8000:8000"
     volumes:
