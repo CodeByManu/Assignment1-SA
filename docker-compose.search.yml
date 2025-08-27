@@ -1,0 +1,41 @@
+name: assignment3-sa-search
+
+services:
+  web:
+    build: .
+    env_file: .env
+    environment:
+      SEARCH_ENABLED: "true"          # override sin tocar .env
+      OPENSEARCH_HOST: opensearch
+      OPENSEARCH_PORT: "9200"
+      SQLITE_PATH: /data/db.sqlite3   # sqlite dentro del volumen
+    depends_on:
+      - opensearch
+    ports:
+      - "8000:8000"
+    volumes:
+      - db-data:/data                 # persistencia DB
+      - media-data:/app/media         # persistencia media
+      - .:/app                        # (opcional) hot-reload del código
+    command: ["python", "manage.py", "boot_search"]
+    # si querés extender tiempo de espera a OS:
+    # command: ["python", "manage.py", "boot", "--os-timeout", "120"]
+
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile:  { soft: 65536, hard: 65536 }
+    ports:
+      - "9200:9200"
+    volumes:
+      - os-data:/usr/share/opensearch/data
+
+volumes:
+  db-data:
+  media-data:
+  os-data:

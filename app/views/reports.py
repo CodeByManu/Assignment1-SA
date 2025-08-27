@@ -14,7 +14,9 @@ from django.db.models import (
 )
 from django.db.models.functions import ExtractYear, Coalesce
 from ..models import Author, Book, Review, YearlySales
-
+from ..services import search_service
+import logging
+logger = logging.getLogger(__name__)
 
 def authors_table(request):
     qs = Author.objects.all().annotate(
@@ -195,28 +197,70 @@ def top_selling_books(request):
         {"books": books, "sort": sort, "querystring": base_qs},
     )
 
-
 def search(request):
     q = (request.GET.get("q") or "").strip()
-    books = Book.objects.none()
-    if q:
+    page = int(request.GET.get("page") or 1)
+    page_size = 25
+    offset = (page - 1) * page_size
+    print(f"[SEARCH] mode={'OS' if search_service.is_enabled() else 'DB'} q='{q}'")
+    logger.info("[SEARCH] mode=%s q='%s'", "OS" if search_service.is_enabled() else "DB", q)
+
+    context = {"q": q, "os_enabled": search_service.is_enabled()}
+
+    if not q:
+        # sin consulta: no mostramos nada
+        context.update({"page_obj": None, "os_books": [], "os_reviews": [], "page": page, "has_next": False, "has_prev": False})
+        return render(request, "app/reports/search.html", context)
+
+    if search_service.is_enabled():
+        # --- OpenSearch ---
+        search_service.ensure_indices()
+        res = search_service.search_all(q, size=page_size, offset=offset)
+
+        def _norm_book(hit):
+            src = hit.get("_source", {}) or {}
+            hl = hit.get("highlight", {}) or {}
+            return {
+                "id": src.get("id"),
+                "name": src.get("name"),
+                "author_name": src.get("author_name"),
+                "summary": src.get("summary") or "",
+                "highlight_summary": (hl.get("summary") or [None])[0],
+            }
+
+        def _norm_review(hit):
+            src = hit.get("_source", {}) or {}
+            hl = hit.get("highlight", {}) or {}
+            return {
+                "book_name": src.get("book_name"),
+                "review": src.get("review") or "",
+                "score": src.get("score"),
+                "upvotes": src.get("upvotes"),
+                "highlight_review": (hl.get("review") or [None])[0],
+            }
+
+        os_books = [_norm_book(h) for h in res.get("books", [])]
+        os_reviews = [_norm_review(h) for h in res.get("reviews", [])]
+        total = max(res.get("total_books", 0), res.get("total_reviews", 0))
+
+        context.update({
+            "os_books": os_books,
+            "os_reviews": os_reviews,
+            "page": page,
+            "has_prev": page > 1,
+            "has_next": (page * page_size) < total,
+        })
+        return render(request, "app/reports/search.html", context)
+
+    else:
+        # --- Fallback DB (tu lógica previa) ---
         words = [w for w in q.split() if w]
+        books = Book.objects.none()
         if words:
             query = Q()
             for w in words:
-                query |= Q(summary__icontains=w)
-            books = (
-                Book.objects.select_related("author")
-                .filter(query)
-                .order_by("name")
-            )
-
-    page_obj = Paginator(books, 25).get_page(request.GET.get("page"))
-    params = request.GET.copy()
-    params.pop("page", None)
-    base_qs = params.urlencode()
-    return render(
-        request,
-        "app/reports/search.html",
-        {"page_obj": page_obj, "q": q, "querystring": base_qs},
-    )
+                query |= Q(summary__icontains=w) | Q(name__icontains=w) | Q(author__name__icontains=w)
+            books = Book.objects.select_related("author").filter(query).order_by("name")
+        page_obj = Paginator(books, page_size).get_page(page)
+        context.update({"page_obj": page_obj})
+        return render(request, "app/reports/search.html", context)

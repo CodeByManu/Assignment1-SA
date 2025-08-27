@@ -1,3 +1,14 @@
 .venv/
 .gitignore
 README.md
+.git/
+__pycache__/
+*.py[cod]
+*.log
+db.sqlite3
+media/
+staticfiles/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

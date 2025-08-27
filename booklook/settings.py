@@ -62,6 +62,10 @@ DATABASES = {
     }
 }
 
+SQLITE_PATH = os.getenv("SQLITE_PATH")
+if SQLITE_PATH:
+    DATABASES["default"]["NAME"] = SQLITE_PATH
+
 # === Password validators ===
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
@@ -94,3 +98,15 @@ SERVE_MEDIA = os.getenv("SERVE_MEDIA", "true").lower() == "true"
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# ===== OpenSearch ====
+SEARCH_ENABLED = os.getenv("SEARCH_ENABLED", "false").lower() == "true"
+OPENSEARCH_HOST = os.getenv("OPENSEARCH_HOST", "localhost")
+OPENSEARCH_PORT = int(os.getenv("OPENSEARCH_PORT", "9200"))
+OPENSEARCH_USER = os.getenv("OPENSEARCH_USER", "")
+OPENSEARCH_PASS = os.getenv("OPENSEARCH_PASS", "")
+OPENSEARCH_USE_TLS = os.getenv("OPENSEARCH_USE_TLS", "false").lower() == "true"
+OPENSEARCH_VERIFY_TLS = os.getenv("OPENSEARCH_VERIFY_TLS", "false").lower() == "true"
+OS_INDEX_BOOKS = os.getenv("OS_INDEX_BOOKS", "books")
+OS_INDEX_REVIEWS = os.getenv("OS_INDEX_REVIEWS", "reviews")
