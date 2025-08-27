@@ -22,7 +22,7 @@ def author_detail(request, pk):
 
 def author_create(request):
     if request.method == "POST":
-        form = AuthorForm(request.POST)
+        form = AuthorForm(request.POST, request.FILES)  
         if form.is_valid():
             form.save()
             return redirect("author_list")
@@ -33,7 +33,7 @@ def author_create(request):
 def author_update(request, pk):
     author = get_object_or_404(Author, pk=pk)
     if request.method == "POST":
-        form = AuthorForm(request.POST, instance=author)
+        form = AuthorForm(request.POST, request.FILES, instance=author)  
         if form.is_valid():
             form.save()
             return redirect("author_list")

@@ -1,48 +1,59 @@
 {% extends "app/base.html" %}
 {% block title %}Author Detail{% endblock %}
+
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="m-0">{{ author.name }}</h2>
-        <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary btn-sm"
-               href="{% url 'author_update' author.id %}">Edit</a>
-            <a class="btn btn-outline-danger btn-sm"
-               href="{% url 'author_delete' author.id %}">Delete</a>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="m-0">{{ author.name }}</h2>
+  <div class="d-flex gap-2">
+    <button class="btn btn-light btn-sm" type="button" onclick="history.back()">Back</button>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'author_update' author.id %}">Edit</a>
+    <a class="btn btn-outline-danger btn-sm" href="{% url 'author_delete' author.id %}">Delete</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Tarjeta de imagen SOLO si hay foto -->
+  {% if author.photo %}
+    <div class="col-md-4">
+      <div class="card h-100 text-center">
+        <div class="card-body">
+          <img src="{{ author.photo.url }}" alt="{{ author.name }}"
+               class="img-fluid rounded"
+               style="max-height: 300px; object-fit: cover; border: 1px solid #ddd;">
         </div>
+      </div>
     </div>
-    <div class="row g-3">
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <p class="mb-1">
-                        <strong>Country:</strong> {{ author.country }}
-                    </p>
-                    <p class="mb-1">
-                        <strong>Birthdate:</strong> {{ author.birthdate }}
-                    </p>
-                    <p class="mb-0">
-                        <strong>About:</strong>
-                        <br>
-                        {{ author.description|default:"—" }}
-                    </p>
-                </div>
-            </div>
+    <div class="col-md-8">
+  {% else %}
+    <div class="col-12">
+  {% endif %}
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <p class="mb-1"><strong>Country:</strong> {{ author.country }}</p>
+          <p class="mb-1"><strong>Birthdate:</strong> {{ author.birthdate }}</p>
+          <p class="mb-0">
+            <strong>About:</strong><br>
+            {{ author.description|default:"—" }}
+          </p>
         </div>
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">Books</div>
-                <div class="card-body">
-                    <ul class="mb-0">
-                        {% for b in books %}
-                            <li>
-                                <a href="{% url 'book_detail' b.id %}">{{ b.name }}</a> — {{ b.publication_date }} (Sales: {{ b.total_sales }})
-                            </li>
-                        {% empty %}
-                            <li class="text-muted">No books</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Books</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            {% for b in books %}
+              <li>
+                <a href="{% url 'book_detail' b.id %}">{{ b.name }}</a>
+                — {{ b.publication_date }} (Sales: {{ b.total_sales }})
+              </li>
+            {% empty %}
+              <li class="text-muted">No books</li>
+            {% endfor %}
+          </ul>
         </div>
+      </div>
     </div>
+</div>
 {% endblock %}

@@ -1,17 +1,76 @@
 {% extends "app/base.html" %}
 {% block title %}{{ title }}{% endblock %}
+
 {% block content %}
-    <h2 class="mb-3">{{ title }}</h2>
-    <div class="card">
-        <div class="card-body">
-            <form method="post" novalidate>
-                {% csrf_token %}
-                {{ form.as_p }}
-                <div class="d-flex gap-2">
-                    <button class="btn btn-primary" type="submit">Save</button>
-                    <a class="btn btn-outline-secondary" href="{% url 'book_list' %}">Cancel</a>
-                </div>
-            </form>
-        </div>
-    </div>
+<h2 class="mb-3">{{ title }}</h2>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+        {{ form.name }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.author.id_for_label }}">Author</label>
+        {{ form.author }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.publication_date.id_for_label }}">Publication date</label>
+        {{ form.publication_date }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.summary.id_for_label }}">Summary</label>
+        {{ form.summary }}
+      </div>
+
+      <!-- Cover -->
+      <div class="mb-3">
+        <label class="form-label">Cover</label>
+
+        {% if form.instance.cover %}
+          <div class="mb-2">
+            <img src="{{ form.instance.cover.url }}" alt="Current cover"
+                 style="max-width: 220px; height: auto; border: 1px solid #ddd; border-radius: 6px;">
+          </div>
+
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-replace-cover">
+            Replace cover
+          </button>
+
+          <div id="replace-cover-wrapper" class="mt-2" style="display:none;">
+            {{ form.cover }}
+            <div class="form-text">Choose a new image to replace the current cover.</div>
+          </div>
+        {% else %}
+          {{ form.cover }}
+          <div class="form-text">Upload a cover image (optional).</div>
+        {% endif %}
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a class="btn btn-outline-secondary" href="{% url 'book_list' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const btn = document.getElementById('btn-replace-cover');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        const wrap = document.getElementById('replace-cover-wrapper');
+        if (wrap) wrap.style.display = 'block';
+        btn.style.display = 'none';
+      });
+    }
+  })();
+</script>
 {% endblock %}

@@ -1,64 +1,72 @@
-<!-- app/templates/app/books/detail.html -->
 {% extends "app/base.html" %}
 {% block title %}Book Detail{% endblock %}
+
 {% block content %}
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="m-0">{{ book.name }}</h2>
-        <div class="d-flex gap-2">
-            <a class="btn btn-outline-secondary btn-sm"
-               href="{% url 'book_update' book.id %}">Edit</a>
-            <a class="btn btn-outline-danger btn-sm"
-               href="{% url 'book_delete' book.id %}">Delete</a>
-        </div>
-    </div>
-    <div class="row g-3">
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <p class="mb-1">
-                        <strong>Author:</strong> <a href="{% url 'author_detail' book.author.id %}">{{ book.author.name }}</a>
-                    </p>
-                    <p class="mb-1">
-                        <strong>Published:</strong> {{ book.publication_date }}
-                    </p>
-                    <p class="mb-2">
-                        <strong>Total sales:</strong> {{ book.total_sales }}
-                    </p>
-                    <p class="mb-0">
-                        <strong>Summary:</strong>
-                        <br>
-                        {{ book.summary }}
-                    </p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">Yearly Sales</div>
-                <div class="card-body">
-                    <ul class="mb-0">
-                        {% for y in yearly %}
-                            <li>{{ y.year }} — {{ y.units }}</li>
-                        {% empty %}
-                            <li class="text-muted">No data</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="card mt-3">
-        <div class="card-header">Top Reviews</div>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="m-0">{{ book.name }}</h2>
+  <div class="d-flex gap-2">
+    <button class="btn btn-light btn-sm" type="button" onclick="history.back()">Back</button>
+    <a class="btn btn-outline-secondary btn-sm" href="{% url 'book_update' book.id %}">Edit</a>
+    <a class="btn btn-outline-danger btn-sm" href="{% url 'book_delete' book.id %}">Delete</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Tarjeta de portada SOLO si hay imagen -->
+  {% if book.cover %}
+    <div class="col-md-4">
+      <div class="card h-100 text-center">
         <div class="card-body">
-            <ul class="mb-0">
-                {% for r in reviews|slice:":5" %}
-                    <li>
-                        <b>{{ r.score }}/5</b> ({{ r.upvotes }} upvotes): {{ r.review|truncatewords:25 }}
-                    </li>
-                {% empty %}
-                    <li class="text-muted">No reviews</li>
-                {% endfor %}
-            </ul>
+          <img src="{{ book.cover.url }}" alt="{{ book.name }}"
+               class="img-fluid rounded"
+               style="max-height: 300px; object-fit: cover; border: 1px solid #ddd;">
         </div>
+      </div>
     </div>
+    <div class="col-md-8">
+  {% else %}
+    <div class="col-12">
+  {% endif %}
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <p class="mb-1"><strong>Author:</strong> <a href="{% url 'author_detail' book.author.id %}">{{ book.author.name }}</a></p>
+          <p class="mb-1"><strong>Published:</strong> {{ book.publication_date }}</p>
+          <p class="mb-2"><strong>Total sales:</strong> {{ book.total_sales }}</p>
+          <p class="mb-0">
+            <strong>Summary:</strong><br>
+            {{ book.summary }}
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Yearly Sales</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            {% for y in yearly %}
+              <li>{{ y.year }} — {{ y.units }}</li>
+            {% empty %}
+              <li class="text-muted">No data</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+</div>
+
+<div class="card mt-3">
+  <div class="card-header">Top Reviews</div>
+  <div class="card-body">
+    <ul class="mb-0">
+      {% for r in reviews|slice:":5" %}
+        <li>
+          <b>{{ r.score }}/5</b> ({{ r.upvotes }} upvotes): {{ r.review|truncatewords:25 }}
+        </li>
+      {% empty %}
+        <li class="text-muted">No reviews</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
 {% endblock %}

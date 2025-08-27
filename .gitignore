@@ -8,25 +8,25 @@ __pycache__/
 .eggs/
 *.log
 
-# Entorno virtual
+# Entornos
 .venv/
 env/
 venv/
 
-# Django
+# Django / proyecto
 db.sqlite3
 media/
 staticfiles/
 
-# VSCode / IDE
+# IDE / editor
 .vscode/
 .idea/
 
-# Sistema
+# SO
 .DS_Store
 Thumbs.db
 
-# Migrations cache (mantén las migraciones, solo ignora cachés)
+# Migrations cache
 **/__pycache__/
 
 ADR.md

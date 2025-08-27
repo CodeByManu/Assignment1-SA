@@ -1,17 +1,78 @@
 {% extends "app/base.html" %}
 {% block title %}{{ title }}{% endblock %}
+
 {% block content %}
-    <h2 class="mb-3">{{ title }}</h2>
-    <div class="card">
-        <div class="card-body">
-            <form method="post" novalidate>
-                {% csrf_token %}
-                {{ form.as_p }}
-                <div class="d-flex gap-2">
-                    <button class="btn btn-primary" type="submit">Save</button>
-                    <a class="btn btn-outline-secondary" href="{% url 'author_list' %}">Cancel</a>
-                </div>
-            </form>
-        </div>
-    </div>
+<h2 class="mb-3">{{ title }}</h2>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+        {{ form.name }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.birthdate.id_for_label }}">Birthdate</label>
+        {{ form.birthdate }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.country.id_for_label }}">Country</label>
+        {{ form.country }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="{{ form.description.id_for_label }}">About</label>
+        {{ form.description }}
+      </div>
+
+      <!-- Foto -->
+      <div class="mb-3">
+        <label class="form-label">Photo</label>
+
+        {% if form.instance.photo %}
+          <div class="mb-2">
+            <img src="{{ form.instance.photo.url }}" alt="Current photo"
+                 style="max-width: 220px; height: auto; border: 1px solid #ddd; border-radius: 6px;">
+          </div>
+
+          <!-- Botón para reemplazar -->
+          <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-replace-photo">
+            Replace photo
+          </button>
+
+          <!-- Input file oculto por defecto -->
+          <div id="replace-photo-wrapper" class="mt-2" style="display:none;">
+            {{ form.photo }}
+            <div class="form-text">Choose a new image to replace the current one.</div>
+          </div>
+        {% else %}
+          {{ form.photo }}
+          <div class="form-text">Upload an image (optional).</div>
+        {% endif %}
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a class="btn btn-outline-secondary" href="{% url 'author_list' %}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const btn = document.getElementById('btn-replace-photo');
+    if (btn) {
+      btn.addEventListener('click', function () {
+        const wrap = document.getElementById('replace-photo-wrapper');
+        if (wrap) wrap.style.display = 'block';
+        btn.style.display = 'none';
+      });
+    }
+  })();
+</script>
 {% endblock %}
