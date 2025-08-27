@@ -1,0 +1,26 @@
+name: assignment3-sa-app
+
+services:
+  web:
+    build: .
+    env_file: .env
+    environment:
+      SEARCH_ENABLED: "false"      
+      SQLITE_PATH: /data/db.sqlite3  
+    ports:
+      - "8000:8000"
+    volumes:
+      - db-data:/data
+      - media-data:/app/media
+      - .:/app                     
+    command: >
+      sh -c "
+        python manage.py makemigrations --noinput || true &&
+        python manage.py migrate --noinput &&
+        python manage.py seed  &&
+        python manage.py runserver 0.0.0.0:8000
+      "
+
+volumes:
+  db-data:
+  media-data:

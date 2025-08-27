@@ -48,6 +48,25 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+## Different docker-compose
+
+### Application + Database
+```bash
+docker compose -f docker-compose.yml up --build
+```
+### Application + Database + Cache
+
+### Application + Database + Search Engine
+```bash
+docker compose -f docker-compose.search.yml up --build
+```
+
+### Application + Database + Reverse Proxy
+
+### Application + Database + Reverse Proxy + Cache + SearchEngine
+
+
+
 ## Docker compose method
 
 ### 1. Run docker compose command
