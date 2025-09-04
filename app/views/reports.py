@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.core.paginator import Paginator
+from django.core.cache import cache
+from django.conf import settings
 from django.db.models import (
     Avg,
     Count,
@@ -17,12 +19,22 @@ from ..models import Author, Book, Review, YearlySales
 from ..services import search_service
 import re
 
+
 def authors_table(request):
-    qs = Author.objects.all().annotate(
-        book_count=Count("books", distinct=True),
-        avg_score=Avg("books__reviews__score"),
-        total_sales=Coalesce(Sum("books__total_sales"), 0),
-    )
+    cache_key = f"report_authors_table_{request.GET.urlencode()}"
+    context = cache.get(cache_key)
+    if context is not None:
+        return render(
+            request,
+            "app/reports/authors_table.html",
+            context,
+        )
+    if context is None:
+        qs = Author.objects.all().annotate(
+            book_count=Count("books", distinct=True),
+            avg_score=Avg("books__reviews__score"),
+            total_sales=Coalesce(Sum("books__total_sales"), 0),
+        )
 
     name = request.GET.get("name")
     books_min = request.GET.get("books_min")
@@ -68,31 +80,42 @@ def authors_table(request):
     params.pop("page", None)
     params.pop("sort", None)
     base_qs = params.urlencode()
+    context = {"page_obj": page_obj, "sort": sort, "querystring": base_qs}
+    cache.set(cache_key, context, settings.CACHE_TTL)
     return render(
         request,
         "app/reports/authors_table.html",
-        {"page_obj": page_obj, "sort": sort, "querystring": base_qs},
+        context,
     )
 
 
 def top_rated_books(request):
-    high_review_sq = (
-        Review.objects.filter(book=OuterRef("pk"))
-        .order_by("-score", "-upvotes", "-pk")
-        .values("pk")[:1]
-    )
-    low_review_sq = (
-        Review.objects.filter(book=OuterRef("pk"))
-        .order_by("score", "-upvotes", "-pk")
-        .values("pk")[:1]
-    )
+    cache_key = f"report_top_rated_{request.GET.urlencode()}"
+    context = cache.get(cache_key)
+    if context is not None:
+        return render(
+            request,
+            "app/reports/top_rated_books.html",
+            context,
+        )
+    if context is None:
+        high_review_sq = (
+            Review.objects.filter(book=OuterRef("pk"))
+            .order_by("-score", "-upvotes", "-pk")
+            .values("pk")[:1]
+        )
+        low_review_sq = (
+            Review.objects.filter(book=OuterRef("pk"))
+            .order_by("score", "-upvotes", "-pk")
+            .values("pk")[:1]
+        )
 
-    books_qs = Book.objects.select_related("author").annotate(
-        avg_score=Avg("reviews__score"),
-        review_count=Count("reviews"),
-        high_review_id=Subquery(high_review_sq),
-        low_review_id=Subquery(low_review_sq),
-    )
+        books_qs = Book.objects.select_related("author").annotate(
+            avg_score=Avg("reviews__score"),
+            review_count=Count("reviews"),
+            high_review_id=Subquery(high_review_sq),
+            low_review_id=Subquery(low_review_sq),
+        )
 
     sort = request.GET.get("sort", "-avg_score")
     mapping = {
@@ -106,7 +129,7 @@ def top_rated_books(request):
         "-review_count": ["-review_count", "name"],
     }
     order = mapping.get(sort, mapping["-avg_score"])
-    books = books_qs.order_by(*order)[:10]
+    books = list(books_qs.order_by(*order)[:10])
 
     review_ids = set()
     for b in books:
@@ -124,77 +147,92 @@ def top_rated_books(request):
     params.pop("sort", None)
     base_qs = params.urlencode()
 
+    context = {"books": books, "sort": sort, "querystring": base_qs}
+    cache.set(cache_key, context, settings.CACHE_TTL)
+
     return render(
         request,
         "app/reports/top_rated_books.html",
-        {"books": books, "sort": sort, "querystring": base_qs},
+        context,
     )
 
 
 def top_selling_books(request):
-    publication_year = ExtractYear("publication_date")
-    pub_year_units_sq = YearlySales.objects.filter(
-        book=OuterRef("pk"), year=OuterRef("publication_year")
-    ).values("units")[:1]
-    top5_threshold_sq = (
-        YearlySales.objects.filter(year=OuterRef("publication_year"))
-        .order_by("-units")
-        .values("units")[4:5]
-    )
-
-    books_qs = (
-        Book.objects.select_related("author")
-        .annotate(
-            publication_year=publication_year,
-            author_total_sales=Coalesce(Sum("author__books__total_sales"), 0),
-            pub_year_units=Subquery(pub_year_units_sq),
-            top5_threshold=Subquery(top5_threshold_sq),
+    cache_key = f"report_top_selling_{request.GET.urlencode()}"
+    context = cache.get(cache_key)
+    if context is not None:
+        return render(
+            request,
+            "app/reports/top_selling_books.html",
+            context,
         )
-        .annotate(
-            on_top5_publication_year=Case(
-                When(
-                    Q(pub_year_units__isnull=False)
-                    & Q(top5_threshold__isnull=True),
-                    then=True,
-                ),
-                When(
-                    Q(pub_year_units__gte=F("top5_threshold")),
-                    then=True,
-                ),
-                default=False,
-                output_field=BooleanField(),
+    if context is None:
+        publication_year = ExtractYear("publication_date")
+        pub_year_units_sq = YearlySales.objects.filter(
+            book=OuterRef("pk"), year=OuterRef("publication_year")
+        ).values("units")[:1]
+        top5_threshold_sq = (
+            YearlySales.objects.filter(year=OuterRef("publication_year"))
+            .order_by("-units")
+            .values("units")[4:5]
+        )
+        books_qs = (
+            Book.objects.select_related("author")
+            .annotate(
+                publication_year=publication_year,
+                author_total_sales=Coalesce(Sum("author__books__total_sales"), 0),
+                pub_year_units=Subquery(pub_year_units_sq),
+                top5_threshold=Subquery(top5_threshold_sq),
+            )
+            .annotate(
+                on_top5_publication_year=Case(
+                    When(
+                        Q(pub_year_units__isnull=False)
+                        & Q(top5_threshold__isnull=True),
+                        then=True,
+                    ),
+                    When(
+                        Q(pub_year_units__gte=F("top5_threshold")),
+                        then=True,
+                    ),
+                    default=False,
+                    output_field=BooleanField(),
+                )
             )
         )
-    )
 
     sort = request.GET.get("sort", "-total_sales")
     mapping = {
-        "name": ["name"],
-        "-name": ["-name"],
-        "author": ["author__name", "name"],
-        "-author": ["-author__name", "name"],
-        "total_sales": ["total_sales", "name"],
-        "-total_sales": ["-total_sales", "name"],
-        "author_total_sales": ["author_total_sales", "name"],
-        "-author_total_sales": ["-author_total_sales", "name"],
-        "publication_year": ["publication_year", "name"],
-        "-publication_year": ["-publication_year", "name"],
-        "on_top5_publication_year": ["on_top5_publication_year", "name"],
-        "-on_top5_publication_year": ["-on_top5_publication_year", "name"],
-    }
+            "name": ["name"],
+            "-name": ["-name"],
+            "author": ["author__name", "name"],
+            "-author": ["-author__name", "name"],
+            "total_sales": ["total_sales", "name"],
+            "-total_sales": ["-total_sales", "name"],
+            "author_total_sales": ["author_total_sales", "name"],
+            "-author_total_sales": ["-author_total_sales", "name"],
+            "publication_year": ["publication_year", "name"],
+            "-publication_year": ["-publication_year", "name"],
+            "on_top5_publication_year": ["on_top5_publication_year", "name"],
+            "-on_top5_publication_year": ["-on_top5_publication_year", "name"],
+        }
     order = mapping.get(sort, mapping["-total_sales"])
-    books = books_qs.order_by(*order)[:50]
+    books = list(books_qs.order_by(*order)[:50])
 
     params = request.GET.copy()
     params.pop("page", None)
     params.pop("sort", None)
     base_qs = params.urlencode()
 
+    context = {"books": books, "sort": sort, "querystring": base_qs}
+    cache.set(cache_key, context, settings.CACHE_TTL)
+    
     return render(
         request,
         "app/reports/top_selling_books.html",
-        {"books": books, "sort": sort, "querystring": base_qs},
+        context,
     )
+
 
 def search(request):
     q = (request.GET.get("q") or "").strip()
@@ -208,7 +246,9 @@ def search(request):
     context = {"q": q, "engine": "OpenSearch" if use_os else "Database", "page": page}
 
     if not q:
-        context.update({"books": [], "reviews": [], "has_prev": False, "has_next": False})
+        context.update(
+            {"books": [], "reviews": [], "has_prev": False, "has_next": False}
+        )
         return render(request, "app/reports/search.html", context)
 
     if use_os:
@@ -231,7 +271,7 @@ def search(request):
             src = hit.get("_source", {}) or {}
             hl = hit.get("highlight", {}) or {}
             return {
-                "book_id": src.get("book_id"),  
+                "book_id": src.get("book_id"),
                 "book_name": src.get("book_name"),
                 "review": src.get("review") or "",
                 "score": src.get("score"),
@@ -243,12 +283,14 @@ def search(request):
         reviews = [_norm_review(h) for h in res.get("reviews", [])]
         total = max(res.get("total_books", 0), res.get("total_reviews", 0))
 
-        context.update({
-            "books": books,
-            "reviews": reviews,
-            "has_prev": page > 1,
-            "has_next": (page * page_size) < total,
-        })
+        context.update(
+            {
+                "books": books,
+                "reviews": reviews,
+                "has_prev": page > 1,
+                "has_next": (page * page_size) < total,
+            }
+        )
         return render(request, "app/reports/search.html", context)
 
     else:
@@ -261,17 +303,21 @@ def search(request):
             words = [w for w in re.findall(r"[\wáéíóúüñ]+", q.lower()) if len(w) >= 3]
 
         if phrase:
-            q_books = (Q(name__icontains=phrase) |
-                    Q(summary__icontains=phrase) |
-                    Q(author__name__icontains=phrase))
+            q_books = (
+                Q(name__icontains=phrase)
+                | Q(summary__icontains=phrase)
+                | Q(author__name__icontains=phrase)
+            )
             q_reviews = Q(review__icontains=phrase)
         elif words:
             q_books = Q()
             q_reviews = Q()
             for w in words:
-                q_books &= (Q(name__icontains=w) |
-                            Q(summary__icontains=w) |
-                            Q(author__name__icontains=w))
+                q_books &= (
+                    Q(name__icontains=w)
+                    | Q(summary__icontains=w)
+                    | Q(author__name__icontains=w)
+                )
                 q_reviews &= Q(review__icontains=w)
         else:
             books_qs = Book.objects.none()
@@ -279,24 +325,28 @@ def search(request):
             total = 0
             books = []
             reviews = []
-            context.update({
-                "books": books,
-                "reviews": reviews,
-                "has_prev": False,
-                "has_next": False,
-            })
+            context.update(
+                {
+                    "books": books,
+                    "reviews": reviews,
+                    "has_prev": False,
+                    "has_next": False,
+                }
+            )
             return render(request, "app/reports/search.html", context)
 
-        books_qs = (Book.objects
-                        .select_related("author")
-                        .filter(q_books)
-                        .order_by("name")
-                        .distinct())
-        reviews_qs = (Review.objects
-                        .select_related("book", "book__author")
-                        .filter(q_reviews)
-                        .order_by("-upvotes", "-score", "id")
-                        .distinct())
+        books_qs = (
+            Book.objects.select_related("author")
+            .filter(q_books)
+            .order_by("name")
+            .distinct()
+        )
+        reviews_qs = (
+            Review.objects.select_related("book", "book__author")
+            .filter(q_reviews)
+            .order_by("-upvotes", "-score", "id")
+            .distinct()
+        )
 
         total = max(books_qs.count(), reviews_qs.count())
 
@@ -308,7 +358,7 @@ def search(request):
                 "summary": b.summary,
                 "highlight_summary": None,
             }
-            for b in books_qs[offset:offset + page_size]
+            for b in books_qs[offset : offset + page_size]
         ]
         reviews = [
             {
@@ -319,13 +369,15 @@ def search(request):
                 "upvotes": r.upvotes,
                 "highlight_review": None,
             }
-            for r in reviews_qs[offset:offset + page_size]
+            for r in reviews_qs[offset : offset + page_size]
         ]
 
-        context.update({
-            "books": books,
-            "reviews": reviews,
-            "has_prev": page > 1,
-            "has_next": (page * page_size) < total,
-        })
+        context.update(
+            {
+                "books": books,
+                "reviews": reviews,
+                "has_prev": page > 1,
+                "has_next": (page * page_size) < total,
+            }
+        )
         return render(request, "app/reports/search.html", context)

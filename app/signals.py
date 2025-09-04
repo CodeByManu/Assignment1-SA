@@ -1,7 +1,8 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.db.models import Sum
-from .models import YearlySales, Book, Review
+from django.core.cache import cache
+from .models import YearlySales, Book, Review, Author
 from .services import search_service
 
 def _recalc_total_sales(book_id: int):
@@ -50,3 +51,13 @@ def _review_index_after_delete(sender, instance, **kwargs):
         except Exception:
             pass
 
+@receiver(post_save, sender=Author)
+@receiver(post_delete, sender=Author)
+@receiver(post_save, sender=Book)
+@receiver(post_delete, sender=Book)
+@receiver(post_save, sender=Review)
+@receiver(post_delete, sender=Review)
+@receiver(post_save, sender=YearlySales)
+@receiver(post_delete, sender=YearlySales)
+def _clear_cache_on_change(sender, **kwargs):
+    cache.clear()

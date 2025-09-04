@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
+from django.core.cache import cache
+from django.conf import settings
 from ..models import Book
 from ..forms import BookForm
 
@@ -9,10 +11,15 @@ def book_list(request):
     return render(request, "app/books/list.html", {"page_obj": page_obj})
 
 def book_detail(request, pk):
-    book = get_object_or_404(Book.objects.select_related("author"), pk=pk)
-    reviews = book.reviews.order_by("-upvotes", "-score")
-    yearly = book.yearly_sales.order_by("year")
-    return render(request, "app/books/detail.html", {"book": book, "reviews": reviews, "yearly": yearly})
+    cache_key = f"book_detail_{pk}"
+    context = cache.get(cache_key)
+    if context is None:
+        book = get_object_or_404(Book.objects.select_related("author"), pk=pk)
+        reviews = list(book.reviews.order_by("-upvotes", "-score"))
+        yearly = list(book.yearly_sales.order_by("year"))
+        context = {"book": book, "reviews": reviews, "yearly": yearly}
+        cache.set(cache_key, context, settings.CACHE_TTL)
+    return render(request, "app/books/detail.html", context)
 
 def book_create(request):
     if request.method == "POST":

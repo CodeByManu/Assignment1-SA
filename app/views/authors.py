@@ -1,24 +1,29 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
+from django.core.cache import cache
+from django.conf import settings
 from ..models import Author
 from ..forms import AuthorForm
 
 def author_list(request):
-    authors = Author.objects.all().order_by("name")
-    page_obj = Paginator(authors, 25).get_page(request.GET.get("page"))
+    page = request.GET.get("page") or "1"
+    cache_key = f"authors_page_{page}"
+    page_obj = cache.get(cache_key)
+    if page_obj is None:
+        authors = Author.objects.all().order_by("name")
+        page_obj = Paginator(authors, 25).get_page(page)
+        cache.set(cache_key, page_obj, settings.CACHE_TTL)
     return render(request, "app/authors/list.html", {"page_obj": page_obj})
 
 def author_detail(request, pk):
-    author = get_object_or_404(Author, pk=pk)
-    books = author.books.all().order_by("publication_date")
-    return render(
-        request,
-        "app/authors/detail.html",
-        {
-            "author": author,
-            "books": books,
-        },
-    )
+    cache_key = f"author_detail_{pk}"
+    context = cache.get(cache_key)
+    if context is None:
+        author = get_object_or_404(Author, pk=pk)
+        books = list(author.books.all().order_by("publication_date"))
+        context = {"author": author, "books": books}
+        cache.set(cache_key, context, settings.CACHE_TTL)
+    return render(request, "app/authors/detail.html", context)
 
 def author_create(request):
     if request.method == "POST":
