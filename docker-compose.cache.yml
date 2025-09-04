@@ -1,0 +1,32 @@
+name: assignment3-sa-app-cache
+
+services:
+  web:
+    build: .
+    env_file: .env
+    environment:
+      CACHE_ENABLED: "true"
+      REDIS_URL: "redis://redis:6379/0"
+      SQLITE_PATH: /data/db.sqlite3
+      CACHE_TTL: "300"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    volumes:
+      - db-data:/data
+      - media-data:/app/media
+      - .:/app
+    command: ["python", "manage.py", "boot_search"]
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+volumes:
+  db-data:
+  media-data:
+  redis-data:
