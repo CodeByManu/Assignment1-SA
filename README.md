@@ -2,6 +2,7 @@
 
 ## Table of Contents
 - [Local Development Setup](#local-development-setup)
+- [Cache Setup](#cache-setup)
 - [Docker compose method](#docker-compose-method)
 - [Docker Swarm Orchestration method](#docker-swarm-orchestration-method)
 
@@ -47,6 +48,30 @@ python manage.py createsuperuser
 ```bash
 python manage.py runserver
 ```
+
+## Cache Setup
+
+The application uses Django's in-memory cache by default. To enable Redis:
+
+1. **Start a Redis server**
+   ```bash
+   docker run -d --name redis -p 6379:6379 redis:7
+   ```
+2. **Configure the application** by adding the following line to your `.env` file:
+   ```env
+   REDIS_URL=redis://localhost:6379/1
+   ```
+3. **Verify the cache works**:
+   ```bash
+   python manage.py shell
+   >>> from django.core.cache import cache
+   >>> cache.set("test", "ok")
+   >>> cache.get("test")
+   'ok'
+   ```
+   With Redis you can also run `redis-cli monitor` in another terminal to see `GET`/`SET` operations.
+
+If `REDIS_URL` is not set, the application falls back to the local memory cache.
 
 ## Different docker-compose
 

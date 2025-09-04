@@ -110,3 +110,29 @@ OPENSEARCH_USE_TLS = os.getenv("OPENSEARCH_USE_TLS", "false").lower() == "true"
 OPENSEARCH_VERIFY_TLS = os.getenv("OPENSEARCH_VERIFY_TLS", "false").lower() == "true"
 OS_INDEX_BOOKS = os.getenv("OS_INDEX_BOOKS", "books")
 OS_INDEX_REVIEWS = os.getenv("OS_INDEX_REVIEWS", "reviews")
+
+
+# ===== Redis Cache Configuration =====
+REDIS_URL = os.getenv("REDIS_URL")
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                # Ignore connection errors so app still works without Redis
+                "IGNORE_EXCEPTIONS": True,
+            },
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique",
+        }
+    }
+
+# default cache timeout (seconds)
+CACHE_TTL = int(os.getenv("CACHE_TTL", "300"))
