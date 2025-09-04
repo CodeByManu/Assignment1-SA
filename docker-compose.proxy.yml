@@ -1,31 +1,33 @@
+name: assignment3-sa-proxy
+
 services:
   haproxy:
     image: haproxy:2.9
-    container_name: haproxy
     ports:
       - "80:80"
     volumes:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:
-      - django
+      - web
 
-  django:
+  web:
     build: .
     env_file: .env
     environment:
-      SEARCH_ENABLED: "false"      
-      SQLITE_PATH: /data/db.sqlite3  
+      SERVE_STATIC: "false"  # proxy se encarga
+      SERVE_MEDIA: "false"   # proxy se encarga
+      SQLITE_PATH: /data/db.sqlite3
+      SEARCH_ENABLED: "false"
     expose:
       - "8000"
     volumes:
       - db-data:/data
       - media-data:/app/media
-      - .:/app                     
+      - .:/app
     command: >
       sh -c "
-        python manage.py makemigrations --noinput || true &&
         python manage.py migrate --noinput &&
-        python manage.py seed  &&
+        python manage.py seed &&
         python manage.py runserver 0.0.0.0:8000
       "
 

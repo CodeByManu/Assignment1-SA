@@ -1,0 +1,60 @@
+name: assignment3-sa-full
+
+services:
+  haproxy:
+    image: haproxy:2.9
+    ports:
+      - "80:80"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      - web
+
+  web:
+    build: .
+    env_file: .env
+    environment:
+      SERVE_STATIC: "false"
+      SERVE_MEDIA: "false"
+      SQLITE_PATH: /data/db.sqlite3
+      SEARCH_ENABLED: "true"
+      OPENSEARCH_HOST: opensearch
+      OPENSEARCH_PORT: "9200"
+      REDIS_URL: redis://redis:6379/0
+    expose:
+      - "8000"
+    depends_on:
+      - redis
+      - opensearch
+    volumes:
+      - db-data:/data
+      - media-data:/app/media
+      - .:/app
+    command: ["python", "manage.py", "boot_search"]
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile:  { soft: 65536, hard: 65536 }
+    ports:
+      - "9200:9200"
+    volumes:
+      - os-data:/usr/share/opensearch/data
+
+volumes:
+  db-data:
+  media-data:
+  redis-data:
+  os-data:

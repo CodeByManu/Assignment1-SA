@@ -80,6 +80,9 @@ If `REDIS_URL` is not set, the application falls back to the local memory cache.
 docker compose -f docker-compose.yml up --build
 ```
 ### Application + Database + Cache
+```bash
+docker compose -f docker-compose.cache.yml up --build
+```
 
 ### Application + Database + Search Engine
 ```bash
@@ -87,8 +90,21 @@ docker compose -f docker-compose.search.yml up --build
 ```
 
 ### Application + Database + Reverse Proxy
+```bash
+docker compose -f docker-compose.proxy.yml up --build
+```
+Then browse: http://app.localhost (add to /etc/hosts if needed, usually Docker for Linux maps automatically; else add: 127.0.0.1 app.localhost)
 
 ### Application + Database + Reverse Proxy + Cache + SearchEngine
+```bash
+docker compose -f docker-compose.full.yml up --build
+```
+Visit: http://app.localhost
+
+Environment flags:
+- SERVE_STATIC / SERVE_MEDIA = false when using proxy (handled by HAProxy)
+- SEARCH_ENABLED + OPENSEARCH_* for search
+- REDIS_URL for cache
 
 
 
@@ -96,7 +112,7 @@ docker compose -f docker-compose.search.yml up --build
 
 ### 1. Run docker compose command
 ```bash
-docker compose up --build
+docker compose up -f <compose file name> --build
 ```
 
 The application will be available at http://localhost:8000
@@ -112,6 +128,8 @@ docker swarm init
 ```bash
 docker stack deploy -c compose.yml <stack_name>
 ```
+> [!NOTE]
+> Here we use compose.yml because that compose file uses an uploaded docker image to a registry
 
 The application will be available at http://localhost:8000
 

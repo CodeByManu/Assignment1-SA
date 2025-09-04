@@ -95,6 +95,8 @@ UPLOADS_DIR_BOOKS = os.getenv("UPLOADS_DIR_BOOKS", "covers/")
 
 # Flag para servir media desde Django en dev (o desactivar en prod con proxy)
 SERVE_MEDIA = os.getenv("SERVE_MEDIA", "true").lower() == "true"
+# Permite desactivar el servido de archivos estáticos por Django cuando existe un reverse proxy
+SERVE_STATIC = os.getenv("SERVE_STATIC", "true").lower() == "true"
 os.makedirs(MEDIA_ROOT, exist_ok=True)
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

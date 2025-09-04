@@ -27,3 +27,8 @@ urlpatterns = [
 # Sirve MEDIA sólo si estamos en dev o si habilitas el flag SERVE_MEDIA
 if settings.DEBUG or settings.SERVE_MEDIA:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Servir STATIC sólo si DEBUG o flag SERVE_STATIC está activo.
+if settings.DEBUG or getattr(settings, "SERVE_STATIC", True):
+    # Nota: en producción normalmente se usaría collectstatic y un proxy/CDN
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
