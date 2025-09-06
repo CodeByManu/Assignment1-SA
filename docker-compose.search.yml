@@ -33,6 +33,18 @@ services:
     volumes:
       - os-data:/usr/share/opensearch/data
 
+  gatling:
+    image: denvazh/gatling:latest
+    volumes:
+      - ./gatling/user-files:/opt/gatling/user-files/simulations/
+      - ./gatling/results:/opt/gatling/results
+      - ./gatling/conf:/opt/gatling/conf
+    environment:
+      - GATLING_BASE_URL=http://localhost:8000
+    command: ["gatling.sh", "-s", "IndexSimulation"]
+    depends_on:
+      - web
+      
 volumes:
   db-data:
   media-data:

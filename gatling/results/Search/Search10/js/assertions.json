@@ -1,0 +1,10 @@
+{
+  "simulation": "IndexSimulation",
+  "simulationId": "booklook-load-test",
+  "start": 1757142654340,
+  "description": "Load test for BookLook application",
+  "scenarios": ["Basic Test 10 req/s"],
+  "assertions": [
+
+  ]
+}

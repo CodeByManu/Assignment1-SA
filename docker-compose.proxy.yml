@@ -30,6 +30,16 @@ services:
         python manage.py seed &&
         python manage.py runserver 0.0.0.0:8000
       "
+  gatling:
+    image: denvazh/gatling:latest
+    volumes:
+      - ./gatling/user-files:/opt/gatling/user-files/simulations/
+      - ./gatling/results:/opt/gatling/results
+      - ./gatling/conf:/opt/gatling/conf
+    depends_on:
+      - haproxy
+    command: ["gatling.sh", "-s", "IndexSimulation"]
+
 
 volumes:
   db-data:

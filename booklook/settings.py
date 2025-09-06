@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # === Seguridad / Debug ===
 SECRET_KEY = 'django-insecure-(^^%(0_h0e9f%b_gaiz9&ob0t+5g$526zp6&^o=6&ddyh*z7!m'
 DEBUG = os.getenv("DEBUG", "true").lower() == "true"
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else []
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else ["*"]
 
 # === Apps ===
 INSTALLED_APPS = [
